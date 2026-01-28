@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "TaskMaster",
+    "slug": "taskmaster",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "jsEngine": "hermes",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "jsEngine": "hermes",
+      "supportsTablet": true,
+      "bundleIdentifier": "com.taskmaster.app"
+    },
+    "android": {
+      "jsEngine": "hermes",
+      "package": "com.taskmaster.app",
+      "permissions": [
+        "RECEIVE_BOOT_COMPLETED",
+        "SCHEDULE_EXACT_ALARM",
+        "USE_EXACT_ALARM"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-notifications"
+    ],
+    "scheme": "taskmaster"
+  }
+}
