@@ -1,13 +1,27 @@
-import React from 'react';
+import '../global.css';
+import React, { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useColorScheme } from 'nativewind';
 import Toast from 'react-native-toast-message';
+import { useSettingsStore } from '../store';
 
 export default function RootLayout() {
+  const { setColorScheme } = useColorScheme();
+  const theme = useSettingsStore((s) => s.theme);
+  const loadSettings = useSettingsStore((s) => s.loadSettings);
+
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  useEffect(() => {
+    setColorScheme(theme);
+  }, [theme]);
+
   return (
     <>
       <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="auth" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen
           name="tasks/create"
@@ -39,7 +53,7 @@ export default function RootLayout() {
           }}
         />
       </Stack>
-      <StatusBar style="auto" />
+      <StatusBar style={theme === 'dark' ? 'light' : 'auto'} />
       <Toast />
     </>
   );

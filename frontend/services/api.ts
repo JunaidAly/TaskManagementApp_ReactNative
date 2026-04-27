@@ -9,9 +9,20 @@
 
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 
-// Use environment variable or fallback to localhost
-const API_URL = process.env.API_URL || 'http://localhost:3000/api';
+function getApiBaseUrl(): string {
+  if (__DEV__) {
+    // Android emulator cannot reach the host via localhost — use the special alias
+    if (Platform.OS === 'android') return 'http://10.0.2.2:3000/api';
+    // iOS simulator and web share the host machine's network stack
+    return 'http://localhost:3000/api';
+  }
+  return process.env.API_URL || 'http://localhost:3000/api';
+}
+
+const API_URL = getApiBaseUrl();
+if (__DEV__) console.log('[API] base URL:', API_URL);
 
 // Create axios instance
 const apiClient = axios.create({

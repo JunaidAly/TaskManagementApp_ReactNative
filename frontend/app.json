@@ -27,6 +27,9 @@
       "expo-router",
       "expo-notifications"
     ],
-    "scheme": "taskmaster"
+    "scheme": "taskmaster",
+    "web": {
+      "bundler": "metro"
+    }
   }
 }
