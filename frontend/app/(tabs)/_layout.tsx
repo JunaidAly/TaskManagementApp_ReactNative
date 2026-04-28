@@ -1,39 +1,48 @@
-/**
- * Tab Layout
- * Bottom tab navigation for main app screens
- */
-
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { Text } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+
+type IoniconName = keyof typeof Ionicons.glyphMap;
+
+function TabIcon({ name, focused, color }: { name: IoniconName; focused: boolean; color: string }) {
+  return (
+    <View style={styles.iconWrap}>
+      {focused ? (
+        <LinearGradient
+          colors={['#6366F1', '#8B5CF6']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+      ) : null}
+      <Ionicons name={name} size={20} color={focused ? '#fff' : color} />
+    </View>
+  );
+}
 
 export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
         headerShown: true,
-        tabBarActiveTintColor: '#3B82F6',
-        tabBarInactiveTintColor: '#9CA3AF',
-        tabBarStyle: {
-          backgroundColor: '#FFFFFF',
-          borderTopWidth: 1,
-          borderTopColor: '#E5E7EB',
-          height: 60,
-          paddingBottom: 8,
-          paddingTop: 8,
-        },
-        tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: '600',
-        },
+        tabBarActiveTintColor: '#6366F1',
+        tabBarInactiveTintColor: '#94A3B8',
+        tabBarStyle: styles.tabBar,
+        tabBarLabelStyle: styles.tabLabel,
+        headerStyle: styles.header,
+        headerTitleStyle: styles.headerTitle,
+        headerShadowVisible: false,
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Dashboard',
+          title: 'Today',
+          headerShown: false,
           tabBarIcon: ({ color, focused }) => (
-            <Text style={{ fontSize: 24 }}>{focused ? '📊' : '📈'}</Text>
+            <TabIcon name={focused ? 'sunny' : 'sunny-outline'} focused={focused} color={color} />
           ),
         }}
       />
@@ -42,7 +51,20 @@ export default function TabLayout() {
         options={{
           title: 'Tasks',
           tabBarIcon: ({ color, focused }) => (
-            <Text style={{ fontSize: 24 }}>{focused ? '✅' : '📝'}</Text>
+            <TabIcon
+              name={focused ? 'checkmark-circle' : 'checkmark-circle-outline'}
+              focused={focused}
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="stats"
+        options={{
+          title: 'Stats',
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon name={focused ? 'bar-chart' : 'bar-chart-outline'} focused={focused} color={color} />
           ),
         }}
       />
@@ -50,11 +72,34 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: 'Profile',
+          headerShown: false,
           tabBarIcon: ({ color, focused }) => (
-            <Text style={{ fontSize: 24 }}>{focused ? '👤' : '👥'}</Text>
+            <TabIcon name={focused ? 'person' : 'person-outline'} focused={focused} color={color} />
           ),
         }}
       />
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  tabBar: {
+    backgroundColor: '#fff',
+    borderTopWidth: 0,
+    height: 72,
+    paddingBottom: 12,
+    paddingTop: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.07,
+    shadowRadius: 16,
+    elevation: 24,
+  },
+  tabLabel: { fontSize: 10, fontWeight: '600', marginTop: 2 },
+  iconWrap: {
+    width: 40, height: 28, borderRadius: 9,
+    alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+  },
+  header: { backgroundColor: '#fff', elevation: 0, shadowOpacity: 0 },
+  headerTitle: { fontWeight: '700', fontSize: 17, color: '#0F172A' },
+});

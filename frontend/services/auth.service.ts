@@ -73,9 +73,9 @@ export const updateProfile = async (data: { name?: string; email?: string }): Pr
   return response.data;
 };
 
-export default {
-  register,
-  login,
-  getProfile,
-  updateProfile,
+export const updatePassword = async (data: { currentPassword: string; newPassword: string }): Promise<{ status: string; message: string }> => {
+  const response = await apiClient.put('/auth/update-password', data);
+  return response.data;
 };
+
+export default { register, login, getProfile, updateProfile, updatePassword };
