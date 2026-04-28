@@ -1,390 +1,228 @@
-# TaskMaster - React Native Task Management App
+# TaskMaster — React Native Task Management App
 
-A comprehensive task management mobile application built with React Native, Expo, and Node.js. This project is designed for educational purposes to demonstrate best practices in mobile app development.
+A full-featured task management mobile app built with React Native, Expo, and Node.js. Features a polished UI with gradient design, dark mode, swipe gestures, analytics, and offline support.
 
-## 📱 Features
+## Features
 
 ### Frontend (React Native + Expo)
-- ✅ **User Authentication** - Secure login/signup with JWT tokens
-- 📝 **Task Management** - Create, read, update, delete tasks
-- 🎨 **Modern UI** - Clean interface with NativeWind (Tailwind CSS)
-- 🌓 **Dark Mode** - System/manual theme switching
-- 🔔 **Push Notifications** - Task reminders via Expo Notifications
-- 📊 **Dashboard** - Task statistics and overview
-- 🔍 **Search & Filter** - Find tasks quickly
-- 📦 **Archive** - Archive completed tasks
-- 💾 **Offline Support** - Local data persistence with AsyncStorage
-- ♿ **Accessible** - Screen reader support
+- **Authentication** — Register, login, JWT-based session persistence
+- **Today Screen** — Grouped view of overdue, today, upcoming (7 days), and inbox tasks with progress bar
+- **Task Management** — Create, edit, view, and delete tasks with full CRUD
+- **Categories** — Work, Personal, Health, Shopping, Finance, Other — each with a distinct icon and color
+- **Priorities** — Low / Medium / High with color-coded indicators
+- **Subtasks** — Add, remove, and toggle subtasks inline with a progress bar
+- **Recurring Tasks** — Daily / weekly / monthly recurrence toggle
+- **Quick Add Sheet** — Long-press the FAB for a fast bottom-sheet task entry
+- **Swipe Gestures** — Swipe right to complete, left to delete on any task card
+- **Stats Screen** — Streak counter, weekly bar chart, completion rate, category breakdown
+- **Search & Filter** — Full-text search with status and category filter chips
+- **Archive** — Archive/unarchive tasks separately from deletion
+- **Edit Profile** — Update name, email, and change password
+- **Onboarding** — 3-slide animated onboarding flow shown once on first launch
+- **Dark Mode** — System / light / dark toggle persisted in AsyncStorage
+- **Push Notifications** — Scheduled reminders on task due dates
+- **Offline Cache** — 5-minute AsyncStorage cache with automatic API fallback
 
 ### Backend (Node.js + Express + MongoDB)
-- 🔐 **JWT Authentication** - Secure token-based auth
-- 🗄️ **MongoDB** - NoSQL database with Mongoose ODM
-- 🛡️ **Security** - Rate limiting, CORS, input validation
-- 📡 **RESTful API** - Clean, documented endpoints
-- ⚡ **Error Handling** - Comprehensive error management
+- **JWT Authentication** — Stateless token auth with bcrypt password hashing
+- **Task API** — Full CRUD + archive, subtask toggle, analytics endpoint
+- **Analytics** — Streak calculation, weekly completion data, category breakdown, on-time rate
+- **Rate Limiting** — Brute-force protection on auth routes
+- **RESTful design** — Consistent response envelopes, HTTP status codes
 
-## 🏗️ Architecture
+## Project Structure
 
-### Frontend Structure
 ```
 TaskManagementApp_ReactNative/
-├── frontend/              # React Native frontend
-│   ├── app/              # Expo Router screens
-│   │   ├── (tabs)/      # Tab navigation screens
-│   │   │   ├── index.tsx      # Dashboard
-│   │   │   ├── tasks.tsx      # Tasks list
-│   │   │   └── profile.tsx    # User profile
-│   │   ├── auth/        # Authentication screens
+├── frontend/
+│   ├── app/
+│   │   ├── index.tsx               # Entry: checks onboarding + auth, redirects
+│   │   ├── _layout.tsx             # Root layout with GestureHandlerRootView
+│   │   ├── onboarding/
+│   │   │   └── index.tsx           # 3-slide animated onboarding
+│   │   ├── (tabs)/
+│   │   │   ├── _layout.tsx         # Tab bar (Today, Tasks, Stats, Profile)
+│   │   │   ├── index.tsx           # Today screen
+│   │   │   ├── tasks.tsx           # All tasks with filters
+│   │   │   ├── stats.tsx           # Analytics & streak
+│   │   │   └── profile.tsx         # Settings & account
+│   │   ├── auth/
 │   │   │   ├── login.tsx
-│   │   │   ├── register.tsx
-│   │   │   └── forgot-password.tsx
-│   │   ├── tasks/       # Task management screens
-│   │   │   ├── create.tsx     # Create task
-│   │   │   ├── [id].tsx       # Task details
-│   │   │   ├── edit/[id].tsx  # Edit task
-│   │   │   └── archived.tsx   # Archived tasks
-│   │   └── _layout.tsx  # Root layout
-│   ├── components/      # Reusable UI components
-│   │   ├── Button.tsx
-│   │   ├── Input.tsx
-│   │   ├── TaskCard.tsx
+│   │   │   └── register.tsx
+│   │   ├── tasks/
+│   │   │   ├── create.tsx          # Create task (category, subtasks, recurrence)
+│   │   │   ├── [id].tsx            # Task detail with subtask checklist
+│   │   │   ├── edit/[id].tsx       # Edit task (pre-populated)
+│   │   │   └── archived.tsx        # Archived tasks list
+│   │   └── profile/
+│   │       └── edit.tsx            # Edit profile + change password
+│   ├── components/
+│   │   ├── Button.tsx              # Gradient primary / outline / danger variants
+│   │   ├── Input.tsx               # Animated focus border
+│   │   ├── TaskCard.tsx            # Swipeable card with subtask progress bar
+│   │   ├── QuickAddSheet.tsx       # Bottom sheet quick-add modal
 │   │   ├── Loading.tsx
-│   │   └── ...
-│   ├── services/        # API service layers
-│   │   ├── api.ts      # Axios client
-│   │   ├── auth.service.ts
-│   │   ├── task.service.ts
-│   │   └── notification.service.ts
-│   ├── store/          # Zustand state management
-│   │   └── index.ts
-│   ├── utils/          # Helper functions
-│   │   └── helpers.ts
-│   └── package.json    # Frontend dependencies
-└── backend/            # Node.js backend server
-    ├── src/
-    │   ├── controllers/
-    │   ├── models/
-    │   ├── routes/
-    │   ├── middleware/
-    │   └── server.js
-    └── package.json
+│   │   ├── EmptyState.tsx
+│   │   └── ErrorMessage.tsx
+│   ├── services/
+│   │   ├── api.ts                  # Axios client with auth interceptor
+│   │   ├── auth.service.ts         # register, login, updateProfile, updatePassword
+│   │   ├── task.service.ts         # CRUD, toggleSubtask, getAnalytics, offline cache
+│   │   └── notification.service.ts # Expo scheduled notifications
+│   ├── store/
+│   │   └── index.ts                # Zustand: AuthStore, TaskStore, SettingsStore, OnboardingStore
+│   └── utils/
+│       └── helpers.ts
+└── backend/
+    └── src/
+        ├── controllers/
+        │   ├── auth.controller.js   # register, login, profile, updatePassword
+        │   └── task.controller.js   # CRUD, toggleSubtask, getAnalytics, getTaskStats
+        ├── models/
+        │   └── Task.model.js        # subtasks, category, recurrence, tags, completedAt
+        ├── routes/
+        │   ├── auth.routes.js
+        │   └── task.routes.js
+        ├── middleware/
+        │   └── auth.middleware.js
+        └── server.js
 ```
 
-### Why These Technologies?
+## Tech Stack
 
-#### **Zustand for State Management**
-- **Simpler than Redux**: No boilerplate, straightforward API
-- **Small bundle size**: ~1KB minified
-- **TypeScript-friendly**: Built-in type support
-- **No Context needed**: Direct store access without providers
-- **Perfect for learning**: Easy to understand and implement
+| Layer | Technology |
+|---|---|
+| Mobile framework | React Native + Expo SDK 51 |
+| Routing | Expo Router v3 (file-based) |
+| State management | Zustand |
+| Styling | NativeWind v4 + StyleSheet |
+| Animations | React Native Animated API + expo-linear-gradient |
+| Gestures | react-native-gesture-handler (Swipeable) |
+| Forms | Formik + Yup |
+| Notifications | expo-notifications |
+| Persistence | AsyncStorage |
+| Backend | Node.js + Express |
+| Database | MongoDB + Mongoose |
+| Auth | JWT + bcrypt |
 
-#### **NativeWind (Tailwind CSS)**
-- **Utility-first**: Rapid UI development
-- **Consistent styling**: Same syntax as web Tailwind
-- **Responsive**: Built-in responsive design utilities
-- **Dark mode**: Easy theme switching
-- **Popular**: Industry-standard approach
-
-#### **Formik + Yup**
-- **Form validation**: Schema-based validation with Yup
-- **Error handling**: Built-in error state management
-- **Less code**: Reduces boilerplate for forms
-- **Industry standard**: Widely used in production
-
-#### **Expo Router**
-- **File-based routing**: Automatic navigation setup
-- **Type-safe**: TypeScript support out of the box
-- **Modern**: Latest React Native navigation patterns
-- **Easy deep linking**: Built-in support
-
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
-- Node.js (v16 or higher)
-- npm or yarn
-- MongoDB (local or MongoDB Atlas)
-- Expo CLI: `npm install -g expo-cli`
+- Node.js v18+
+- MongoDB (local or Atlas)
+- Expo Go app on your phone, or an Android/iOS emulator
 
-### Installation
-
-#### 1. Clone and Install Dependencies
+### 1. Install Dependencies
 
 ```bash
-# Navigate to project directory
-cd TaskManagementApp_ReactNative
-
-# Install frontend dependencies
+# Frontend
 cd frontend
 npm install
-cd ..
 
-# Install backend dependencies
-cd backend
+# Backend
+cd ../backend
 npm install
-cd ..
 ```
 
-#### 2. Setup Environment Variables
+### 2. Configure Environment
 
-**Frontend (frontend/.env)**
-```bash
-cd frontend
-cp .env.example .env
-# Edit .env and set:
-API_URL=http://localhost:3000/api
-# For physical device, use your computer's IP:
-# API_URL=http://192.168.1.XXX:3000/api
-cd ..
+**`backend/.env`**
 ```
-
-**Backend (backend/.env)**
-```bash
-cd backend
-cp .env.example .env
-# Edit backend/.env and set:
 PORT=3000
 MONGODB_URI=mongodb://localhost:27017/taskmaster
-# Or use MongoDB Atlas:
-# MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/taskmaster
-JWT_SECRET=your_secure_random_string_here
+JWT_SECRET=your_secret_here
 CORS_ORIGIN=http://localhost:8081
 ```
 
-#### 3. Start MongoDB
+**`frontend/.env`**
+```
+API_URL=http://localhost:3000/api
+# Physical device: use your machine's LAN IP
+# API_URL=http://192.168.1.X:3000/api
+```
 
-**Local MongoDB:**
+### 3. Run
+
 ```bash
-# Make sure MongoDB is installed and running
-mongod
+# Terminal 1 — backend
+cd backend && npm run dev
+
+# Terminal 2 — frontend
+cd frontend && npm start
 ```
 
-**MongoDB Atlas:**
-- Create a free cluster at [mongodb.com/cloud/atlas](https://www.mongodb.com/cloud/atlas)
-- Get your connection string and update `MONGODB_URI` in backend/.env
+Scan the QR code with Expo Go, or press `a` for Android emulator / `i` for iOS simulator.
 
-#### 4. Run the Application
+## API Reference
 
-**Terminal 1 - Backend:**
-```bash
-cd backend
-npm run dev
-```
+All task endpoints require `Authorization: Bearer <token>`.
 
-**Terminal 2 - Frontend:**
-```bash
-cd frontend
-npm start
-```
+### Auth
 
-#### 5. Open in Expo Go
+| Method | Path | Description |
+|---|---|---|
+| POST | `/auth/register` | Create account |
+| POST | `/auth/login` | Login, returns JWT |
+| GET | `/auth/profile` | Get current user |
+| PUT | `/auth/profile` | Update name / email |
+| PUT | `/auth/update-password` | Change password |
 
-- Install Expo Go app on your phone ([iOS](https://apps.apple.com/app/expo-go/id982107779) | [Android](https://play.google.com/store/apps/details?id=host.exp.exponent))
-- Scan the QR code from the terminal
-- Or press `i` for iOS simulator, `a` for Android emulator
+### Tasks
 
-## 📖 API Documentation
+| Method | Path | Description |
+|---|---|---|
+| GET | `/tasks` | List tasks (filters: status, priority, category, isArchived, search, sortBy, order) |
+| POST | `/tasks` | Create task |
+| GET | `/tasks/:id` | Get single task |
+| PUT | `/tasks/:id` | Update task |
+| DELETE | `/tasks/:id` | Delete task |
+| PATCH | `/tasks/:id/subtasks/:subtaskId/toggle` | Toggle subtask completion |
+| GET | `/tasks/stats/summary` | Counts by status |
+| GET | `/tasks/analytics` | Streak, weekly data, category breakdown, on-time rate |
 
-### Base URL
-```
-http://localhost:3000/api
-```
+### Create / Update Task Body
 
-### Authentication Endpoints
-
-#### Register User
-```http
-POST /auth/register
-Content-Type: application/json
-
+```json
 {
-  "name": "John Doe",
-  "email": "john@example.com",
-  "password": "password123"
-}
-```
-
-#### Login
-```http
-POST /auth/login
-Content-Type: application/json
-
-{
-  "email": "john@example.com",
-  "password": "password123"
-}
-```
-
-#### Get Profile (Protected)
-```http
-GET /auth/profile
-Authorization: Bearer <token>
-```
-
-### Task Endpoints (All Protected)
-
-#### Get All Tasks
-```http
-GET /tasks?status=todo&priority=high&sortBy=dueDate&order=asc
-Authorization: Bearer <token>
-```
-
-#### Create Task
-```http
-POST /tasks
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "title": "Complete project",
-  "description": "Finish the React Native app",
+  "title": "Finish report",
+  "description": "Optional details",
   "priority": "high",
   "status": "todo",
-  "dueDate": "2024-12-31T23:59:59Z"
+  "category": "work",
+  "dueDate": "2025-05-01T09:00:00Z",
+  "subtasks": [{ "title": "Draft outline", "completed": false }],
+  "recurrence": { "enabled": true, "type": "weekly" }
 }
 ```
 
-#### Update Task
-```http
-PUT /tasks/:id
-Authorization: Bearer <token>
-Content-Type: application/json
+## Design System
 
-{
-  "status": "done"
-}
-```
+- **Primary gradient**: `#4F46E5` → `#7C3AED` → `#9333EA` (indigo → violet → purple)
+- **Success**: `#10B981` (emerald)
+- **Warning**: `#F59E0B` (amber)
+- **Danger**: `#EF4444` (red)
+- **Dark background**: `#0F172A` / `#1E293B`
+- **Icons**: Ionicons (`@expo/vector-icons`)
 
-#### Delete Task
-```http
-DELETE /tasks/:id
-Authorization: Bearer <token>
-```
+## Troubleshooting
 
-#### Get Task Statistics
-```http
-GET /tasks/stats/summary
-Authorization: Bearer <token>
-```
-
-## 🧪 Testing
-
+**Metro bundler errors**
 ```bash
-# Run tests (when implemented)
-npm test
-
-# Run with coverage
-npm test -- --coverage
+cd frontend && npm start -- --reset-cache
 ```
 
-## 📚 Learning Points
+**API unreachable on a physical device**
+- Replace `localhost` with your machine's LAN IP in `frontend/.env`
+- Ensure both devices are on the same Wi-Fi network
 
-### 1. **State Management with Zustand**
-- Located in `store/index.ts`
-- Three stores: Auth, Tasks, Settings
-- Simple API: `create()`, `set()`, `get()`
-- No provider wrapping needed
+**MongoDB connection failed**
+- Confirm `mongod` is running, or check your Atlas connection string
 
-### 2. **API Integration**
-- Axios interceptors for token attachment (`services/api.ts`)
-- Centralized error handling
-- Type-safe with TypeScript interfaces
-
-### 3. **Form Validation**
-- Formik for form state management
-- Yup for schema validation
-- See `app/auth/register.tsx` for example
-
-### 4. **Navigation**
-- Expo Router file-based routing
-- Protected routes in `app/_layout.tsx`
-- Tab navigation in `app/(tabs)/_layout.tsx`
-
-### 5. **Styling with NativeWind**
-- Tailwind classes in JSX: `className="bg-blue-500 p-4"`
-- Responsive: `className="w-full md:w-1/2"`
-- Dark mode: `className="bg-white dark:bg-gray-800"`
-
-### 6. **Backend Best Practices**
-- MVC pattern (Models, Views/Routes, Controllers)
-- Middleware for auth, validation, rate limiting
-- MongoDB indexes for performance
-- Password hashing with bcrypt
-- JWT for stateless authentication
-
-## 🔒 Security Features
-
-1. **Password Hashing**: bcrypt with salt rounds
-2. **JWT Authentication**: Secure token-based auth
-3. **Rate Limiting**: Prevent brute force attacks
-4. **Input Validation**: express-validator for sanitization
-5. **CORS Protection**: Configured allowed origins
-6. **Environment Variables**: Sensitive data not in code
-
-## 🎨 UI/UX Features
-
-1. **Loading States**: Shows spinner during API calls
-2. **Error Handling**: User-friendly error messages
-3. **Toast Notifications**: Success/error feedback
-4. **Pull to Refresh**: Update data by pulling down
-5. **Empty States**: Helpful messages when no data
-6. **Dark Mode**: Respects system preference
-
-## 🚧 Future Enhancements
-
-- [ ] Real-time sync with WebSockets
-- [ ] Offline-first with Realm or SQLite
-- [ ] Task categories and tags
-- [ ] File attachments
-- [ ] Collaboration features
-- [ ] Calendar view
-- [ ] Task templates
-- [ ] Export tasks (PDF, CSV)
-- [ ] Biometric authentication
-- [ ] Widget support
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-**1. Metro bundler errors:**
+**Expo Go version mismatch**
 ```bash
-npm start -- --reset-cache
+npx expo install --fix
 ```
 
-**2. MongoDB connection failed:**
-- Check if MongoDB is running
-- Verify connection string in `.env`
+## License
 
-**3. API not reachable on physical device:**
-- Use your computer's local IP instead of localhost
-- Ensure phone and computer are on same network
-
-**4. Expo Go errors:**
-```bash
-expo start -c  # Clear cache
-```
-
-## 📄 License
-
-This project is created for educational purposes.
-
-## 👨‍💻 Author
-
-Created as a comprehensive learning project for React Native development.
-
-## 🤝 Contributing
-
-This is an educational project. Feel free to fork and modify for your learning!
-
-## 📞 Support
-
-For questions or issues, please refer to:
-- [Expo Documentation](https://docs.expo.dev/)
-- [React Native Documentation](https://reactnative.dev/)
-- [Express.js Documentation](https://expressjs.com/)
-- [MongoDB Documentation](https://docs.mongodb.com/)
-
----
-
-**Happy Coding! 🚀**
+Educational project — free to fork and modify.

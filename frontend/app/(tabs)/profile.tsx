@@ -1,200 +1,274 @@
-/**
- * Profile Screen
- * User profile and settings
- */
-
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
   Alert,
+  StyleSheet,
+  Switch,
+  StatusBar,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useColorScheme } from 'nativewind';
 import Toast from 'react-native-toast-message';
-import { Button } from '../../components';
 import { useAuthStore, useSettingsStore } from '../../store';
+
+const THEME_OPTIONS = [
+  { key: 'light',  label: 'Light',  icon: 'sunny-outline' as const },
+  { key: 'dark',   label: 'Dark',   icon: 'moon-outline' as const },
+  { key: 'system', label: 'Auto',   icon: 'phone-portrait-outline' as const },
+] as const;
+
+interface RowProps {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  onPress?: () => void;
+  right?: React.ReactNode;
+  isDark: boolean;
+  danger?: boolean;
+  showChevron?: boolean;
+}
+
+function SettingRow({ icon, label, onPress, right, isDark, danger, showChevron = true }: RowProps) {
+  return (
+    <TouchableOpacity
+      style={styles.row}
+      onPress={onPress}
+      activeOpacity={onPress ? 0.7 : 1}
+    >
+      <View style={[styles.rowIconWrap, { backgroundColor: danger ? '#FEE2E2' : isDark ? '#283548' : '#EEF2FF' }]}>
+        <Ionicons name={icon} size={18} color={danger ? '#EF4444' : '#6366F1'} />
+      </View>
+      <Text style={[styles.rowLabel, isDark && styles.rowLabelDark, danger && styles.rowLabelDanger]}>
+        {label}
+      </Text>
+      {right !== undefined
+        ? right
+        : showChevron && onPress
+          ? <Ionicons name="chevron-forward" size={16} color={isDark ? '#475569' : '#CBD5E1'} />
+          : null}
+    </TouchableOpacity>
+  );
+}
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { user, logout } = useAuthStore();
   const { theme, notificationsEnabled, setTheme, setNotificationsEnabled } = useSettingsStore();
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
   const handleLogout = () => {
-    Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
+    Alert.alert('Log Out', 'Are you sure you want to log out?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Log Out',
+        style: 'destructive',
+        onPress: async () => {
+          await logout();
+          Toast.show({ type: 'success', text1: 'Logged Out', text2: 'See you soon!' });
+          router.replace('/auth/login');
         },
-        {
-          text: 'Logout',
-          style: 'destructive',
-          onPress: async () => {
-            await logout();
-            Toast.show({
-              type: 'success',
-              text1: 'Logged Out',
-              text2: 'You have been successfully logged out',
-            });
-            router.replace('/auth/login');
-          },
-        },
-      ]
-    );
+      },
+    ]);
   };
 
+  const initials = user?.name
+    ? user.name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()
+    : '?';
+
   return (
-    <ScrollView className="flex-1 bg-gray-50 dark:bg-gray-900">
-      <View className="px-4 py-6">
-        {/* Header */}
-        <View className="mb-6">
-          <Text className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Profile
-          </Text>
-        </View>
+    <ScrollView
+      style={[styles.screen, isDark && styles.screenDark]}
+      showsVerticalScrollIndicator={false}
+    >
+      <StatusBar barStyle="light-content" />
 
-        {/* User Info Card */}
-        <View className="bg-white dark:bg-gray-800 rounded-lg p-6 mb-6 shadow-sm">
-          <View className="items-center mb-4">
-            <View className="w-20 h-20 bg-primary-500 rounded-full items-center justify-center mb-3">
-              <Text className="text-3xl font-bold text-white">
-                {user?.name.charAt(0).toUpperCase()}
-              </Text>
-            </View>
-            <Text className="text-xl font-semibold text-gray-900 dark:text-white mb-1">
-              {user?.name}
-            </Text>
-            <Text className="text-sm text-gray-600 dark:text-gray-400">
-              {user?.email}
-            </Text>
+      {/* Gradient header */}
+      <LinearGradient
+        colors={['#4F46E5', '#7C3AED', '#9333EA']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[styles.headerGradient, { paddingTop: insets.top + 24 }]}
+      >
+        <View style={styles.deco1} />
+        <View style={styles.deco2} />
+
+        <View style={styles.avatarRing}>
+          <Text style={styles.avatarText}>{initials}</Text>
+        </View>
+        <Text style={styles.userName}>{user?.name}</Text>
+        <Text style={styles.userEmail}>{user?.email}</Text>
+      </LinearGradient>
+
+      <View style={styles.body}>
+        {/* Appearance */}
+        <Text style={[styles.sectionLabel, isDark && styles.sectionLabelDark]}>APPEARANCE</Text>
+        <View style={[styles.card, isDark && styles.cardDark]}>
+          <View style={styles.themeRow}>
+            {THEME_OPTIONS.map((opt) => {
+              const active = theme === opt.key;
+              return (
+                <TouchableOpacity
+                  key={opt.key}
+                  onPress={() => setTheme(opt.key)}
+                  style={styles.themeOpt}
+                  activeOpacity={0.8}
+                >
+                  {active ? (
+                    <LinearGradient
+                      colors={['#6366F1', '#8B5CF6']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.themeOptInner}
+                    >
+                      <Ionicons name={opt.icon} size={18} color="#fff" />
+                      <Text style={styles.themeOptActiveText}>{opt.label}</Text>
+                    </LinearGradient>
+                  ) : (
+                    <View style={[styles.themeOptInner, isDark ? styles.themeOptInactiveDark : styles.themeOptInactiveLight]}>
+                      <Ionicons name={opt.icon} size={18} color={isDark ? '#475569' : '#94A3B8'} />
+                      <Text style={[styles.themeOptInactiveText, isDark && styles.themeOptInactiveTextDark]}>
+                        {opt.label}
+                      </Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
 
-        {/* Settings Section */}
-        <View className="mb-6">
-          <Text className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
-            Settings
-          </Text>
-
-          {/* Theme Setting */}
-          <View className="bg-white dark:bg-gray-800 rounded-lg mb-3 shadow-sm">
-            <View className="p-4 border-b border-gray-200 dark:border-gray-700">
-              <Text className="text-base font-medium text-gray-900 dark:text-white mb-3">
-                Theme
-              </Text>
-              <View className="flex-row">
-                <TouchableOpacity
-                  className={`flex-1 py-2 px-4 rounded-l-lg ${
-                    theme === 'light' ? 'bg-primary-500' : 'bg-gray-200 dark:bg-gray-700'
-                  }`}
-                  onPress={() => setTheme('light')}
-                >
-                  <Text
-                    className={`text-center font-medium ${
-                      theme === 'light' ? 'text-white' : 'text-gray-700 dark:text-gray-300'
-                    }`}
-                  >
-                    Light
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  className={`flex-1 py-2 px-4 ${
-                    theme === 'dark' ? 'bg-primary-500' : 'bg-gray-200 dark:bg-gray-700'
-                  }`}
-                  onPress={() => setTheme('dark')}
-                >
-                  <Text
-                    className={`text-center font-medium ${
-                      theme === 'dark' ? 'text-white' : 'text-gray-700 dark:text-gray-300'
-                    }`}
-                  >
-                    Dark
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  className={`flex-1 py-2 px-4 rounded-r-lg ${
-                    theme === 'system' ? 'bg-primary-500' : 'bg-gray-200 dark:bg-gray-700'
-                  }`}
-                  onPress={() => setTheme('system')}
-                >
-                  <Text
-                    className={`text-center font-medium ${
-                      theme === 'system' ? 'text-white' : 'text-gray-700 dark:text-gray-300'
-                    }`}
-                  >
-                    System
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Notifications Setting */}
-            <TouchableOpacity
-              className="p-4 flex-row items-center justify-between"
-              onPress={() => setNotificationsEnabled(!notificationsEnabled)}
-            >
-              <Text className="text-base font-medium text-gray-900 dark:text-white">
-                Notifications
-              </Text>
-              <View
-                className={`w-12 h-6 rounded-full ${
-                  notificationsEnabled ? 'bg-primary-500' : 'bg-gray-300 dark:bg-gray-600'
-                }`}
-              >
-                <View
-                  className={`w-5 h-5 rounded-full bg-white mt-0.5 ${
-                    notificationsEnabled ? 'ml-6' : 'ml-0.5'
-                  }`}
-                />
-              </View>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Actions */}
-        <View className="mb-6">
-          <TouchableOpacity
-            className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-3 shadow-sm"
+        {/* Settings */}
+        <Text style={[styles.sectionLabel, isDark && styles.sectionLabelDark]}>PREFERENCES</Text>
+        <View style={[styles.card, isDark && styles.cardDark]}>
+          <SettingRow
+            icon="notifications-outline"
+            label="Push Notifications"
+            isDark={isDark}
+            showChevron={false}
+            right={
+              <Switch
+                value={notificationsEnabled}
+                onValueChange={setNotificationsEnabled}
+                trackColor={{ false: '#E2E8F0', true: '#6366F1' }}
+                thumbColor="#fff"
+                ios_backgroundColor="#E2E8F0"
+              />
+            }
+          />
+          <View style={[styles.divider, isDark && styles.dividerDark]} />
+          <SettingRow
+            icon="archive-outline"
+            label="Archived Tasks"
             onPress={() => router.push('/tasks/archived')}
-          >
-            <Text className="text-base font-medium text-gray-900 dark:text-white">
-              📦 Archived Tasks
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-3 shadow-sm"
-            onPress={() => {
-              Toast.show({
-                type: 'info',
-                text1: 'About TaskMaster',
-                text2: 'Version 1.0.0 - A learning project',
-              });
-            }}
-          >
-            <Text className="text-base font-medium text-gray-900 dark:text-white">
-              ℹ️ About
-            </Text>
-          </TouchableOpacity>
+            isDark={isDark}
+          />
+          <View style={[styles.divider, isDark && styles.dividerDark]} />
+          <SettingRow
+            icon="information-circle-outline"
+            label="About TaskMaster"
+            onPress={() =>
+              Toast.show({ type: 'info', text1: 'TaskMaster v1.0.0', text2: 'A learning project' })
+            }
+            isDark={isDark}
+          />
         </View>
 
-        {/* Logout Button */}
-        <Button
-          title="Logout"
-          onPress={handleLogout}
-          variant="danger"
-          size="large"
-        />
+        {/* Account */}
+        <Text style={[styles.sectionLabel, isDark && styles.sectionLabelDark]}>ACCOUNT</Text>
+        <View style={[styles.card, isDark && styles.cardDark]}>
+          <SettingRow
+            icon="person-outline"
+            label="Edit Profile"
+            onPress={() => router.push('/profile/edit')}
+            isDark={isDark}
+          />
+          <View style={[styles.divider, isDark && styles.dividerDark]} />
+          <SettingRow
+            icon="log-out-outline"
+            label="Log Out"
+            onPress={handleLogout}
+            isDark={isDark}
+            danger
+            showChevron={false}
+          />
+        </View>
 
-        {/* Version Info */}
-        <Text className="text-center text-xs text-gray-500 dark:text-gray-600 mt-6">
-          TaskMaster v1.0.0
-        </Text>
+        <Text style={[styles.version, isDark && styles.versionDark]}>TaskMaster v1.0.0</Text>
       </View>
     </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: '#F8FAFC' },
+  screenDark: { backgroundColor: '#0F172A' },
+  headerGradient: {
+    paddingBottom: 40,
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  deco1: {
+    position: 'absolute', width: 160, height: 160, borderRadius: 80,
+    backgroundColor: 'rgba(255,255,255,0.07)', top: -40, right: -30,
+  },
+  deco2: {
+    position: 'absolute', width: 80, height: 80, borderRadius: 40,
+    backgroundColor: 'rgba(255,255,255,0.05)', bottom: 0, left: 20,
+  },
+  avatarRing: {
+    width: 88, height: 88, borderRadius: 44,
+    backgroundColor: 'rgba(255,255,255,0.22)',
+    borderWidth: 3, borderColor: 'rgba(255,255,255,0.5)',
+    alignItems: 'center', justifyContent: 'center',
+    marginBottom: 14,
+  },
+  avatarText: { fontSize: 30, fontWeight: '800', color: '#fff' },
+  userName: { fontSize: 22, fontWeight: '700', color: '#fff', marginBottom: 4 },
+  userEmail: { fontSize: 13, color: 'rgba(255,255,255,0.72)' },
+  body: { padding: 16 },
+  sectionLabel: {
+    fontSize: 11, fontWeight: '700', color: '#94A3B8',
+    letterSpacing: 1, textTransform: 'uppercase',
+    marginTop: 20, marginBottom: 8, marginLeft: 4,
+  },
+  sectionLabelDark: { color: '#475569' },
+  card: {
+    backgroundColor: '#fff', borderRadius: 16, overflow: 'hidden',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06, shadowRadius: 8, elevation: 3,
+  },
+  cardDark: { backgroundColor: '#1E293B' },
+  themeRow: { flexDirection: 'row', padding: 10, gap: 8 },
+  themeOpt: { flex: 1, borderRadius: 10, overflow: 'hidden' },
+  themeOptInner: {
+    alignItems: 'center', justifyContent: 'center',
+    paddingVertical: 12, borderRadius: 10, gap: 5,
+  },
+  themeOptInactiveLight: { backgroundColor: '#F1F5F9' },
+  themeOptInactiveDark: { backgroundColor: '#334155' },
+  themeOptActiveText: { fontSize: 11, color: '#fff', fontWeight: '700' },
+  themeOptInactiveText: { fontSize: 11, color: '#94A3B8', fontWeight: '600' },
+  themeOptInactiveTextDark: { color: '#64748B' },
+  row: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 16, paddingVertical: 14,
+  },
+  rowIconWrap: {
+    width: 36, height: 36, borderRadius: 10,
+    alignItems: 'center', justifyContent: 'center', marginRight: 12,
+  },
+  rowLabel: { flex: 1, fontSize: 15, fontWeight: '500', color: '#0F172A' },
+  rowLabelDark: { color: '#F1F5F9' },
+  rowLabelDanger: { color: '#EF4444' },
+  divider: { height: 1, backgroundColor: '#F1F5F9', marginLeft: 64 },
+  dividerDark: { backgroundColor: '#334155' },
+  version: { textAlign: 'center', fontSize: 12, color: '#CBD5E1', marginTop: 28, marginBottom: 8 },
+  versionDark: { color: '#334155' },
+});

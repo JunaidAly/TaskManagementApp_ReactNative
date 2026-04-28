@@ -4,10 +4,14 @@
   "description": "Backend API for TaskMaster app",
   "main": "src/server.js",
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "nodemon src/server.js"
+    "start": "node api.js && node src/server.js",
+    "dev": "node api.js && nodemon src/server.js"
   },
-  "keywords": ["task", "management", "api"],
+  "keywords": [
+    "task",
+    "management",
+    "api"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {

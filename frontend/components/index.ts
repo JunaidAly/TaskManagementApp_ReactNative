@@ -9,3 +9,4 @@ export { Loading } from './Loading';
 export { TaskCard } from './TaskCard';
 export { EmptyState } from './EmptyState';
 export { ErrorMessage } from './ErrorMessage';
+export { QuickAddSheet } from './QuickAddSheet';

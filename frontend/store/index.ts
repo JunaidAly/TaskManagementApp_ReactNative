@@ -1,18 +1,7 @@
-/**
- * Zustand Store for Global State Management
- * 
- * Why Zustand?
- * - Simpler API compared to Redux (no boilerplate)
- * - Built-in TypeScript support
- * - Small bundle size (~1KB)
- * - Easy to learn for beginners
- * - No need for Context providers
- */
-
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Auth Store - Manages authentication state
+// ─── User / Auth ──────────────────────────────────────────────────────────────
 interface User {
   id: string;
   name: string;
@@ -38,58 +27,54 @@ export const useAuthStore = create<AuthState>((set) => ({
   isLoading: true,
 
   setUser: (user) => set({ user, isAuthenticated: !!user }),
-  
   setToken: (token) => set({ token }),
 
   login: async (user, token) => {
-    try {
-      // Save to AsyncStorage for persistence
-      await AsyncStorage.setItem('authToken', token);
-      await AsyncStorage.setItem('user', JSON.stringify(user));
-      set({ user, token, isAuthenticated: true });
-    } catch (error) {
-      console.error('Error saving auth data:', error);
-    }
+    await AsyncStorage.setItem('authToken', token);
+    await AsyncStorage.setItem('user', JSON.stringify(user));
+    set({ user, token, isAuthenticated: true });
   },
 
   logout: async () => {
-    try {
-      await AsyncStorage.removeItem('authToken');
-      await AsyncStorage.removeItem('user');
-      set({ user: null, token: null, isAuthenticated: false });
-    } catch (error) {
-      console.error('Error clearing auth data:', error);
-    }
+    await AsyncStorage.multiRemove(['authToken', 'user']);
+    set({ user: null, token: null, isAuthenticated: false });
   },
 
   loadAuth: async () => {
     try {
-      const token = await AsyncStorage.getItem('authToken');
-      const userStr = await AsyncStorage.getItem('user');
-      
-      if (token && userStr) {
-        const user = JSON.parse(userStr);
-        set({ user, token, isAuthenticated: true, isLoading: false });
+      const [token, userStr] = await AsyncStorage.multiGet(['authToken', 'user']);
+      if (token[1] && userStr[1]) {
+        set({ user: JSON.parse(userStr[1]), token: token[1], isAuthenticated: true, isLoading: false });
       } else {
         set({ isLoading: false });
       }
-    } catch (error) {
-      console.error('Error loading auth data:', error);
+    } catch {
       set({ isLoading: false });
     }
   },
 }));
 
-// Task Store - Manages task state
-interface Task {
+// ─── Task ─────────────────────────────────────────────────────────────────────
+export interface Subtask {
+  _id: string;
+  title: string;
+  completed: boolean;
+}
+
+export interface Task {
   _id: string;
   title: string;
   description?: string;
   dueDate?: string;
   priority: 'low' | 'medium' | 'high';
   status: 'todo' | 'in-progress' | 'done';
+  category: 'work' | 'personal' | 'health' | 'shopping' | 'finance' | 'other';
   isArchived: boolean;
   userId: string;
+  subtasks: Subtask[];
+  tags: string[];
+  recurrence: { enabled: boolean; type?: 'daily' | 'weekly' | 'monthly'; interval?: number };
+  completedAt?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -110,29 +95,16 @@ export const useTaskStore = create<TaskState>((set) => ({
   tasks: [],
   isLoading: false,
   error: null,
-
   setTasks: (tasks) => set({ tasks, error: null }),
-  
-  addTask: (task) => set((state) => ({ 
-    tasks: [task, ...state.tasks] 
-  })),
-  
-  updateTask: (id, updates) => set((state) => ({
-    tasks: state.tasks.map(task => 
-      task._id === id ? { ...task, ...updates } : task
-    )
-  })),
-  
-  deleteTask: (id) => set((state) => ({
-    tasks: state.tasks.filter(task => task._id !== id)
-  })),
-  
-  setLoading: (loading) => set({ isLoading: loading }),
-  
+  addTask: (task) => set((s) => ({ tasks: [task, ...s.tasks] })),
+  updateTask: (id, updates) =>
+    set((s) => ({ tasks: s.tasks.map((t) => (t._id === id ? { ...t, ...updates } : t)) })),
+  deleteTask: (id) => set((s) => ({ tasks: s.tasks.filter((t) => t._id !== id) })),
+  setLoading: (isLoading) => set({ isLoading }),
   setError: (error) => set({ error }),
 }));
 
-// App Settings Store - Manages app preferences
+// ─── Settings ─────────────────────────────────────────────────────────────────
 interface SettingsState {
   theme: 'light' | 'dark' | 'system';
   notificationsEnabled: boolean;
@@ -157,15 +129,32 @@ export const useSettingsStore = create<SettingsState>((set) => ({
 
   loadSettings: async () => {
     try {
-      const theme = await AsyncStorage.getItem('theme');
-      const notificationsEnabled = await AsyncStorage.getItem('notificationsEnabled');
-      
+      const [theme, notif] = await AsyncStorage.multiGet(['theme', 'notificationsEnabled']);
       set({
-        theme: (theme as any) || 'system',
-        notificationsEnabled: notificationsEnabled !== 'false',
+        theme: (theme[1] as any) || 'system',
+        notificationsEnabled: notif[1] !== 'false',
       });
-    } catch (error) {
-      console.error('Error loading settings:', error);
-    }
+    } catch {/* ignore */}
+  },
+}));
+
+// ─── Onboarding ───────────────────────────────────────────────────────────────
+interface OnboardingState {
+  hasSeenOnboarding: boolean;
+  setHasSeenOnboarding: (seen: boolean) => Promise<void>;
+  loadOnboarding: () => Promise<void>;
+}
+
+export const useOnboardingStore = create<OnboardingState>((set) => ({
+  hasSeenOnboarding: false,
+
+  setHasSeenOnboarding: async (seen) => {
+    await AsyncStorage.setItem('hasSeenOnboarding', String(seen));
+    set({ hasSeenOnboarding: seen });
+  },
+
+  loadOnboarding: async () => {
+    const val = await AsyncStorage.getItem('hasSeenOnboarding');
+    set({ hasSeenOnboarding: val === 'true' });
   },
 }));

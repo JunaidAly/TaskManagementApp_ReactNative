@@ -1,9 +1,4 @@
-/**
- * Register Screen
- * Handles new user registration
- */
-
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -11,27 +6,24 @@ import {
   KeyboardAvoidingView,
   Platform,
   TouchableOpacity,
+  StyleSheet,
+  Animated,
+  StatusBar,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
 import Toast from 'react-native-toast-message';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { Input, Button } from '../../components';
 import { useAuthStore } from '../../store';
 import { register as registerApi } from '../../services/auth.service';
 
-// Validation schema
 const registerSchema = Yup.object().shape({
-  name: Yup.string()
-    .min(2, 'Name must be at least 2 characters')
-    .max(50, 'Name must not exceed 50 characters')
-    .required('Name is required'),
-  email: Yup.string()
-    .email('Invalid email address')
-    .required('Email is required'),
-  password: Yup.string()
-    .min(6, 'Password must be at least 6 characters')
-    .required('Password is required'),
+  name: Yup.string().min(2, 'At least 2 characters').max(50).required('Name is required'),
+  email: Yup.string().email('Invalid email address').required('Email is required'),
+  password: Yup.string().min(6, 'Minimum 6 characters').required('Password is required'),
   confirmPassword: Yup.string()
     .oneOf([Yup.ref('password')], 'Passwords must match')
     .required('Please confirm your password'),
@@ -41,7 +33,17 @@ export default function RegisterScreen() {
   const router = useRouter();
   const login = useAuthStore((state) => state.login);
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
+
+  React.useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
+      Animated.spring(slideAnim, { toValue: 0, useNativeDriver: true, speed: 8, bounciness: 5 }),
+    ]).start();
+  }, []);
 
   const handleRegister = async (values: {
     name: string;
@@ -49,20 +51,9 @@ export default function RegisterScreen() {
     password: string;
   }) => {
     try {
-      const response = await registerApi({
-        name: values.name,
-        email: values.email,
-        password: values.password,
-      });
-
+      const response = await registerApi({ name: values.name, email: values.email, password: values.password });
       await login(response.data.user, response.data.token);
-
-      Toast.show({
-        type: 'success',
-        text1: 'Account Created!',
-        text2: 'Welcome to TaskMaster',
-      });
-
+      Toast.show({ type: 'success', text1: 'Account Created!', text2: 'Welcome to TaskMaster' });
       router.replace('/(tabs)');
     } catch (error: any) {
       Toast.show({
@@ -74,49 +65,47 @@ export default function RegisterScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className="flex-1 bg-white dark:bg-gray-900"
-    >
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.flex}>
+      <StatusBar barStyle="light-content" />
       <ScrollView
-        contentContainerStyle={{ flexGrow: 1 }}
+        style={styles.screen}
+        contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <View className="flex-1 justify-center px-6 py-12">
-          {/* Header */}
-          <View className="mb-8">
-            <Text className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
-              Create Account
-            </Text>
-            <Text className="text-lg text-gray-600 dark:text-gray-400">
-              Sign up to get started with TaskMaster
-            </Text>
+        {/* Hero gradient */}
+        <LinearGradient
+          colors={['#4F46E5', '#7C3AED', '#9333EA']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.hero}
+        >
+          <View style={styles.deco1} />
+          <View style={styles.deco2} />
+          <View style={styles.logoBox}>
+            <Ionicons name="person-add" size={40} color="#fff" />
           </View>
+          <Text style={styles.brandName}>Join TaskMaster</Text>
+          <Text style={styles.brandSub}>Create your free account today</Text>
+        </LinearGradient>
 
-          {/* Form */}
+        {/* Form card */}
+        <Animated.View
+          style={[styles.formCard, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}
+        >
+          <Text style={styles.title}>Create Account</Text>
+          <Text style={styles.subtitle}>Fill in your details to get started</Text>
+
           <Formik
-            initialValues={{
-              name: '',
-              email: '',
-              password: '',
-              confirmPassword: '',
-            }}
+            initialValues={{ name: '', email: '', password: '', confirmPassword: '' }}
             validationSchema={registerSchema}
             onSubmit={handleRegister}
           >
-            {({
-              values,
-              errors,
-              touched,
-              handleChange,
-              handleBlur,
-              handleSubmit,
-              isSubmitting,
-            }) => (
-              <View>
+            {({ values, errors, touched, handleChange, handleBlur, handleSubmit, isSubmitting }) => (
+              <View style={styles.form}>
                 <Input
                   label="Full Name"
-                  placeholder="Enter your full name"
+                  placeholder="John Doe"
                   value={values.name}
                   onChangeText={handleChange('name')}
                   onBlur={handleBlur('name')}
@@ -125,8 +114,8 @@ export default function RegisterScreen() {
                 />
 
                 <Input
-                  label="Email"
-                  placeholder="Enter your email"
+                  label="Email Address"
+                  placeholder="you@example.com"
                   value={values.email}
                   onChangeText={handleChange('email')}
                   onBlur={handleBlur('email')}
@@ -138,25 +127,25 @@ export default function RegisterScreen() {
 
                 <Input
                   label="Password"
-                  placeholder="Create a password"
+                  placeholder="Create a strong password"
                   value={values.password}
                   onChangeText={handleChange('password')}
                   onBlur={handleBlur('password')}
-                  error={
-                    touched.password && errors.password ? errors.password : undefined
-                  }
+                  error={touched.password && errors.password ? errors.password : undefined}
                   secureTextEntry={!showPassword}
                   rightIcon={
-                    <Text className="text-primary-500 font-medium">
-                      {showPassword ? 'Hide' : 'Show'}
-                    </Text>
+                    <Ionicons
+                      name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                      size={18}
+                      color="#94A3B8"
+                    />
                   }
                   onRightIconPress={() => setShowPassword(!showPassword)}
                 />
 
                 <Input
                   label="Confirm Password"
-                  placeholder="Confirm your password"
+                  placeholder="Repeat your password"
                   value={values.confirmPassword}
                   onChangeText={handleChange('confirmPassword')}
                   onBlur={handleBlur('confirmPassword')}
@@ -165,15 +154,15 @@ export default function RegisterScreen() {
                       ? errors.confirmPassword
                       : undefined
                   }
-                  secureTextEntry={!showConfirmPassword}
+                  secureTextEntry={!showConfirm}
                   rightIcon={
-                    <Text className="text-primary-500 font-medium">
-                      {showConfirmPassword ? 'Hide' : 'Show'}
-                    </Text>
+                    <Ionicons
+                      name={showConfirm ? 'eye-off-outline' : 'eye-outline'}
+                      size={18}
+                      color="#94A3B8"
+                    />
                   }
-                  onRightIconPress={() =>
-                    setShowConfirmPassword(!showConfirmPassword)
-                  }
+                  onRightIconPress={() => setShowConfirm(!showConfirm)}
                 />
 
                 <Button
@@ -181,22 +170,65 @@ export default function RegisterScreen() {
                   onPress={handleSubmit}
                   loading={isSubmitting}
                   disabled={isSubmitting}
+                  size="large"
                 />
               </View>
             )}
           </Formik>
 
-          {/* Login Link */}
-          <View className="flex-row justify-center mt-6">
-            <Text className="text-gray-600 dark:text-gray-400">
-              Already have an account?{' '}
-            </Text>
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>Already have an account? </Text>
             <TouchableOpacity onPress={() => router.push('/auth/login')}>
-              <Text className="text-primary-500 font-semibold">Sign In</Text>
+              <Text style={styles.footerLink}>Sign In</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </Animated.View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
+
+const styles = StyleSheet.create({
+  flex: { flex: 1 },
+  screen: { flex: 1, backgroundColor: '#F8FAFC' },
+  scrollContent: { flexGrow: 1 },
+  hero: {
+    height: 240,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    paddingTop: 20,
+  },
+  deco1: {
+    position: 'absolute', width: 180, height: 180, borderRadius: 90,
+    backgroundColor: 'rgba(255,255,255,0.07)', top: -50, right: -40,
+  },
+  deco2: {
+    position: 'absolute', width: 100, height: 100, borderRadius: 50,
+    backgroundColor: 'rgba(255,255,255,0.05)', bottom: -20, left: -10,
+  },
+  logoBox: {
+    width: 72, height: 72, borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    alignItems: 'center', justifyContent: 'center',
+    marginBottom: 12,
+  },
+  brandName: { fontSize: 24, fontWeight: '800', color: '#fff', letterSpacing: 0.4 },
+  brandSub: { fontSize: 13, color: 'rgba(255,255,255,0.7)', marginTop: 4 },
+  formCard: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    marginTop: -24,
+    paddingHorizontal: 28,
+    paddingTop: 32,
+    paddingBottom: 40,
+  },
+  title: { fontSize: 24, fontWeight: '800', color: '#0F172A', marginBottom: 6 },
+  subtitle: { fontSize: 14, color: '#64748B', marginBottom: 24 },
+  form: { marginBottom: 4 },
+  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 24 },
+  footerText: { color: '#64748B', fontSize: 14 },
+  footerLink: { color: '#6366F1', fontWeight: '700', fontSize: 14 },
+});
